@@ -7,8 +7,17 @@ import { Row, Col, Button, Menu, Alert } from "antd";
 import Web3Modal from "web3modal";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { useUserAddress } from "eth-hooks";
-import { useExchangePrice, useGasPrice, useUserProvider, useContractLoader, useContractReader, useEventListener, useBalance, useExternalContractLoader } from "./hooks";
-import { Header, Account, Faucet, Ramp, Contract, GasGauge } from "./components";
+import {
+  useExchangePrice,
+  useGasPrice,
+  useUserProvider,
+  useContractLoader,
+  useContractReader,
+  useEventListener,
+  useBalance,
+  useExternalContractLoader,
+} from "./hooks";
+import { Header, Account, AddressInput, Faucet, Ramp, Contract, GasGauge } from "./components";
 import { Transactor } from "./helpers";
 import { formatEther, parseEther } from "@ethersproject/units";
 //import Hints from "./Hints";
@@ -162,23 +171,56 @@ function App(props) {
     setRoute(window.location.pathname)
   }, [setRoute]);
 
-  let faucetHint = ""
+  let faucetHint = "";
   const [ faucetClicked, setFaucetClicked ] = useState( false );
-    if(!faucetClicked&&localProvider&&localProvider._network&&localProvider._network.chainId==31337&&yourLocalBalance&&formatEther(yourLocalBalance)<=0){
-    faucetHint = (
-      <div style={{padding:16}}>
-        <Button type={"primary"} onClick={()=>{
-          faucetTx({
-            to: address,
-            value: parseEther("0.01"),
-          });
-          setFaucetClicked(true)
-        }}>
-          💰 Grab funds from the faucet ⛽️
-        </Button>
-      </div>
-    )
-  }
+    if (
+      // !faucetClicked &&
+      localProvider &&
+      localProvider._network &&
+      localProvider._network.chainId == 31337 &&
+      yourLocalBalance // &&
+      // formatEther(yourLocalBalance) <= 0
+    ) {
+      faucetHint = (
+        <div style={{ padding: 16 }}>
+          <Button
+            type={"primary"}
+            onClick={() => {
+              faucetTx({
+                to: address,
+                value: parseEther("0.01"),
+              });
+              setFaucetClicked(true);
+            }}
+          >
+            💰 Grab funds from the faucet ⛽️
+          </Button>
+        </div>
+      );
+    }
+
+    let impersonateButton = null;
+    const [impersonateAddress, stateSetImpersonateAddress] = useState("");
+    impersonateButton = (
+      <AddressInput
+        value={impersonateAddress}
+        ensProvider={mainnetProvider}
+        onChange={address => {
+          setImpersonateAddress(address);
+        }}
+      />
+    );
+
+    const setImpersonateAddress = async (address) => {      
+      stateSetImpersonateAddress(address);
+      // const signer = await ethers.provider.getSigner("0x364d6D0333432C3Ac016Ca832fb8594A8cE43Ca6")
+      localProvider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address],
+      });
+    }
+
+    
 
   return (
     <div className="App">
@@ -290,6 +332,7 @@ function App(props) {
            blockExplorer={blockExplorer}
          />
          {faucetHint}
+         {impersonateButton}
       </div>
 
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}

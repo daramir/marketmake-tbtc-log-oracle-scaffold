@@ -32,6 +32,8 @@
     "ship": "yarn workspace @scaffold-eth/react-app ship",
     "generate": "yarn workspace @scaffold-eth/hardhat generate",
     "account": "yarn workspace @scaffold-eth/hardhat account",
+    "impersonate-signer": "yarn workspace @scaffold-eth/hardhat impersonate-signer",
+    "impersonate-stop": "yarn workspace @scaffold-eth/hardhat stop-impersonate-signer",
     "mine": "cd packages/hardhat && npx hardhat mine",
     "wallet": "cd packages/hardhat && npx hardhat wallet",
     "fundedwallet": "cd packages/hardhat && npx hardhat fundedwallet",

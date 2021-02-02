@@ -1,7 +1,7 @@
 const { utils } = require("ethers");
 const fs = require("fs");
 const chalk = require("chalk");
-
+const TBTCToken = require("@keep-network/tbtc/artifacts/TBTCToken.json");
 require("@nomiclabs/hardhat-waffle");
 
 const { isAddress, getAddress, formatUnits, parseUnits } = utils;
@@ -331,6 +331,25 @@ task("balance", "Prints an account's balance")
       console.log(formatUnits(balance, "ether"), "ETH");
     });
 
+task("tbtc-balance", "Prints an account's TBTC balance")
+    .addPositionalParam("account", "The account's address")
+    .setAction(async (taskArgs, { ethers }) => {
+      // Read-Only; By connecting to a Provider, allows:
+      // - Any constant function
+      // - Querying Filters
+      // - Static Calling non-constant methods (as anonymous sender)
+      const erc20 = new ethers.Contract(
+        "0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa",
+        TBTCToken.abi,
+        ethers.provider
+      );
+
+      const balance = await erc20.balanceOf(
+        await addr(ethers, taskArgs.account)
+      );
+      console.log(formatUnits(balance, "ether"), "TBTC");
+    });
+
 function send(signer, txparams) {
   return signer.sendTransaction(txparams, (error, transactionHash) => {
     if (error) {
@@ -384,4 +403,67 @@ task("send", "Send ETH")
     debug(JSON.stringify(txRequest, null, 2));
 
     return send(fromSigner, txRequest);
+});
+
+task("fund-tbtc", "Send TBTC")
+  .addParam("from", "From address or account index")
+  .addOptionalParam("to", "To address or account index")
+  .addOptionalParam("amount", "Amount to send in ether")
+  .addOptionalParam("data", "Data included in transaction")
+  .addOptionalParam("gasPrice", "Price you are willing to pay in gwei")
+  .addOptionalParam("gasLimit", "Limit of how much gas to spend")
+
+  .setAction(async (taskArgs, { network, ethers }) => {
+    const from = await addr(ethers, taskArgs.from);
+    debug(`Normalized from address: ${from}`);
+    const fromSigner = await ethers.provider.getSigner(from);
+
+    let to;
+    if (taskArgs.to) {
+      to = await addr(ethers, taskArgs.to);
+      debug(`Normalized to address: ${to}`);
+    }
+
+    const tokenContract = new ethers.Contract("0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa", TBTCToken.abi, fromSigner);
+
+    const approveTx = await tokenContract.transfer(to, parseUnits("1", "ether"));
+		// await approveTx.wait();
+
+    // if ((await tokenContract.allowance(from, vendingContract.address)).lt(tbtcBalance)) {
+		// 	console.log(`approving vending machine to spend all of our tbtc`);
+		// 	const approveTx = await tokenContract.approve(vendingContract.address, tbtcBalance);
+		// 	await approveTx.wait();
+		// } else {
+		// 	console.log(`no need to approve vending machine spending`);
+		// }
+
+    
+
+    return approveTx.wait();
+});
+
+task("impersonate-signer", "Activate signer impersonation")
+  .addParam("address", "Address to impersonate")
+  .setAction(async (taskArgs, { network, ethers }) => {
+    const from = await addr(ethers, taskArgs.address);
+    debug(`Normalized from address: ${from}`);
+    const fromSigner = await ethers.provider.getSigner(from);
+
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [from]}
+    )
+});
+
+task("impersonate-stop", "Deactivate signer impersonation")
+  .addParam("address", "Address to stop impersonating")
+  .setAction(async (taskArgs, { network, ethers }) => {
+    const from = await addr(ethers, taskArgs.address);
+    debug(`Normalized from address: ${from}`);
+    const fromSigner = await ethers.provider.getSigner(from);
+
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [from]}
+    )
 });
