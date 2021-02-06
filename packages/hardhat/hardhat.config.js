@@ -2,6 +2,7 @@ const { utils } = require("ethers");
 const fs = require("fs");
 const chalk = require("chalk");
 const TBTCToken = require("@keep-network/tbtc/artifacts/TBTCToken.json");
+const TSTToken = require("./artifacts/contracts/TrustlessAsset.sol/TrustlessAsset.json");
 require("@nomiclabs/hardhat-waffle");
 
 const { isAddress, getAddress, formatUnits, parseUnits } = utils;
@@ -95,6 +96,15 @@ module.exports = {
   solidity: {
     compilers: [
       {
+        version: "0.7.6",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
+      {
         version: "0.8.0",
         settings: {
           optimizer: {
@@ -113,7 +123,7 @@ module.exports = {
         }
       },
       {
-        version: "0.6.7",
+        version: "0.6.12",
         settings: {
           optimizer: {
             enabled: true,
@@ -442,8 +452,31 @@ task("fund-tbtc", "Send TBTC")
     return approveTx.wait();
 });
 
+task("fund-erc20", "Send ERC20 token")
+  .addParam("from", "From address or account index")
+  .addParam("tokenaddress", "Token address")
+  .addOptionalParam("to", "To address or account index")
+  .addOptionalParam("amount", "Amount to send in ether")
+  .setAction(async (taskArgs, { network, ethers }) => {
+    const from = await addr(ethers, taskArgs.from);
+    debug(`Normalized from address: ${from}`);
+    const fromSigner = await ethers.provider.getSigner(from);
+
+    let to;
+    if (taskArgs.to) {
+      to = await addr(ethers, taskArgs.to);
+      debug(`Normalized to address: ${to}`);
+    }
+
+    const tokenContract = new ethers.Contract(taskArgs.tokenaddress, TSTToken.abi, fromSigner);
+
+    const approveTx = await tokenContract.transfer(to, parseUnits(taskArgs.amount, "ether"));    
+
+    return approveTx.wait();
+});
+
 task("impersonate-signer", "Activate signer impersonation")
-  .addParam("address", "Address to impersonate")
+  .addPositionalParam("address", "Address to impersonate")
   .setAction(async (taskArgs, { network, ethers }) => {
     const from = await addr(ethers, taskArgs.address);
     debug(`Normalized from address: ${from}`);
@@ -456,7 +489,7 @@ task("impersonate-signer", "Activate signer impersonation")
 });
 
 task("impersonate-stop", "Deactivate signer impersonation")
-  .addParam("address", "Address to stop impersonating")
+  .addPositionalParam("address", "Address to stop impersonating")
   .setAction(async (taskArgs, { network, ethers }) => {
     const from = await addr(ethers, taskArgs.address);
     debug(`Normalized from address: ${from}`);
