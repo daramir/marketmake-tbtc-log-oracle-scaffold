@@ -60,7 +60,7 @@ const localProviderUrl = targetNetwork.rpcUrl;
 // as you deploy to other networks you can set REACT_APP_PROVIDER=https://dai.poa.network in packages/react-app/.env
 const localProviderUrlFromEnv = process.env.REACT_APP_PROVIDER ? process.env.REACT_APP_PROVIDER : localProviderUrl;
 if(DEBUG) console.log("🏠 Connecting to provider:", localProviderUrlFromEnv);
-const localProvider = new JsonRpcProvider(localProviderUrlFromEnv);
+const localProvider = new JsonRpcProvider("https://kovan.infura.io/v3/" + INFURA_ID); //new JsonRpcProvider(localProviderUrlFromEnv);
 
 // 🔭 block explorer URL
 const blockExplorer = targetNetwork.blockExplorer;
@@ -253,19 +253,35 @@ function App(props) {
                 and give you a form to interact with it locally
             */}
 
-            <Contract
+            {/* <Contract
               name="YourContract"
               signer={userProvider.getSigner()}
               provider={localProvider}
               address={address}
               blockExplorer={blockExplorer}
-            />
+            /> */}
 
 
             {/* uncomment for a second contract: */}
             
             <Contract
               name="TrustlessAsset"
+              signer={userProvider.getSigner()}
+              provider={localProvider}
+              address={address}
+              blockExplorer={blockExplorer}
+            />
+            
+            <Contract
+              name="BrokerSystem"
+              signer={userProvider.getSigner()}
+              provider={localProvider}
+              address={address}
+              blockExplorer={blockExplorer}
+            />
+
+            <Contract
+              name="APIConsumer"
               signer={userProvider.getSigner()}
               provider={localProvider}
               address={address}

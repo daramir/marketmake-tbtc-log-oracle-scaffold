@@ -12,7 +12,11 @@ const main = async () => {
 
   const yourContract = await deploy("YourContract") // <-- add in constructor args like line 19 vvvv
 
-  const secondContract = await deploy("TrustlessAsset", ["SampleToken", "TST"])
+  const assetContract = await deploy("TrustlessAsset", ["SampleToken", "TST"])
+
+  const brokerContract = await deploy("BrokerSystem", [assetContract.address])
+  
+  const secondContract = await deploy("APIConsumer", [brokerContract.address])
 
   // const exampleToken = await deploy("ExampleToken")
   // const examplePriceOracle = await deploy("ExamplePriceOracle")
